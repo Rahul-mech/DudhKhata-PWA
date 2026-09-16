@@ -6,7 +6,6 @@ import {
   onSnapshot,
   query,
   orderBy,
-  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { Contact, MilkEntry, ExtraTxn, UserSettings } from "../types";
