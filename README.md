@@ -2,25 +2,32 @@
 
 Clean digital milk ledger based on fat percentage.
 
-## Stack
-- Vite + React + TypeScript
-- Tailwind CSS
-- Firebase (Auth + Firestore)
-- PWA ready
+## Live Features
+- Google Login
+- Contacts (Customer / Supplier)
+- Daily Milk Entry (Morning + Evening + live calculation)
+- Extra Transactions (Advance / Ghee / Other)
+- Dashboard with today + month totals
+- Settings (change Base Rate)
+- Offline support via Firestore persistence
 
 ## Formula
 ```
 Amount = Litres × Fat × (Base Rate ÷ 10)
 ```
 
-## Setup
-1. `npm install`
-2. `npm run dev`
+## Stack
+- Vite + React + TypeScript
+- Tailwind CSS v4
+- Firebase Auth + Firestore
 
-## Features
-- Google Login
-- Contacts (Customer / Supplier)
-- Daily Entries (Morning + Evening)
-- Extra Transactions (Advance / Ghee)
-- Offline support via Firestore
-- Simple clean UI
+## Run locally
+```bash
+npm install
+npm run dev
+```
+
+## Deploy
+Connect this repo to Vercel or Render and deploy.
+
+Make sure Firebase Authentication (Google) and Firestore are enabled in your Firebase project.

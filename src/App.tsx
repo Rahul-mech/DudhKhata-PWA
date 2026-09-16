@@ -2,14 +2,18 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import ContactsPage from "./pages/ContactsPage";
+import EntryPage from "./pages/EntryPage";
+import ExtraPage from "./pages/ExtraPage";
+import SettingsPage from "./pages/SettingsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="flex min-h-dvh items-center justify-center bg-[var(--background)]">
+        <p className="text-sm text-[var(--muted-foreground)]">Loading...</p>
       </div>
     );
   }
@@ -40,6 +44,38 @@ export default function App() {
         element={
           <ProtectedRoute>
             <DashboardPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/contacts"
+        element={
+          <ProtectedRoute>
+            <ContactsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/entry"
+        element={
+          <ProtectedRoute>
+            <EntryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/extra"
+        element={
+          <ProtectedRoute>
+            <ExtraPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         }
       />
