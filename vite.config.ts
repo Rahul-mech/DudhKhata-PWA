@@ -5,9 +5,14 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+
+  preview: {
+    allowedHosts: ["dudhkhata-pwa-3.onrender.com"],
   },
 });
