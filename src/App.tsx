@@ -8,6 +8,7 @@ import EntryPage from "./pages/EntryPage";
 import ExtraPage from "./pages/ExtraPage";
 import SettingsPage from "./pages/SettingsPage";
 import EntriesPage from "./pages/EntriesPage";
+import ReportsPage from "./pages/ReportsPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -37,66 +38,15 @@ export default function App() {
 
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={user ? <Navigate to="/" replace /> : <LoginPage />}
-      />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <DashboardPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/contacts"
-        element={
-          <ProtectedRoute>
-            <ContactsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/contacts/:contactId"
-        element={
-          <ProtectedRoute>
-            <ContactDetailPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/entries"
-        element={
-          <ProtectedRoute>
-            <EntriesPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/entry"
-        element={
-          <ProtectedRoute>
-            <EntryPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/extra"
-        element={
-          <ProtectedRoute>
-            <ExtraPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <SettingsPage />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+      <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/contacts" element={<ProtectedRoute><ContactsPage /></ProtectedRoute>} />
+      <Route path="/contacts/:contactId" element={<ProtectedRoute><ContactDetailPage /></ProtectedRoute>} />
+      <Route path="/entries" element={<ProtectedRoute><EntriesPage /></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+      <Route path="/entry" element={<ProtectedRoute><EntryPage /></ProtectedRoute>} />
+      <Route path="/extra" element={<ProtectedRoute><ExtraPage /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
