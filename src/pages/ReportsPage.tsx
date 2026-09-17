@@ -7,7 +7,6 @@ import {
   listenExtras,
 } from "../lib/db";
 import {
-  contactBalance,
   entryTotals,
   extraSigned,
   formatInr,
@@ -63,7 +62,6 @@ export default function ReportsPage() {
       for (const x of cExtras) {
         extraNet += extraSigned(c.kind, x);
       }
-      // Month-only balance approx: milk + signed extras in this month
       const settlement = milkAmt + extraNet;
       return {
         contact: c,
@@ -84,7 +82,7 @@ export default function ReportsPage() {
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)] px-4 py-3">
         <div className="mx-auto flex max-w-lg items-center gap-3">
           <Link to="/" className="text-sm text-[var(--muted-foreground)]">
-            ← Back
+            Back
           </Link>
           <h1 className="text-lg font-semibold">Monthly Settlement</h1>
         </div>
@@ -117,7 +115,7 @@ export default function ReportsPage() {
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
             <p className="text-xs text-[var(--muted-foreground)]">Net settlement</p>
             <p className="mt-1 text-lg font-semibold tabular-nums">{formatInr(grandSettlement)}</p>
-            <p className="text-xs text-[var(--muted-foreground)]">Milk ± advances</p>
+            <p className="text-xs text-[var(--muted-foreground)]">Milk +/- advances</p>
           </div>
         </div>
 
@@ -164,7 +162,7 @@ export default function ReportsPage() {
         </section>
 
         <p className="text-center text-xs text-[var(--muted-foreground)]">
-          Contact pe click → us mahine ki detail list
+          Contact pe click to open that month detail
         </p>
       </main>
     </div>
