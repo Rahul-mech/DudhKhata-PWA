@@ -6,6 +6,8 @@ import {
   onSnapshot,
   query,
   orderBy,
+  getDocs,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { Contact, MilkEntry, ExtraTxn, UserSettings } from "../types";
@@ -90,6 +92,22 @@ export async function removeEntry(uid: string, id: string) {
   await deleteDoc(doc(db, "users", uid, "entries", id));
 }
 
+/** Update baseRate on all milk entries in a given month (YYYY-MM). Returns count updated. */
+export async function applyRateToMonth(uid: string, monthKey: string, newRate: number): Promise<number> {
+  const snap = await getDocs(userCol(uid, "entries"));
+  const batch = writeBatch(db);
+  let count = 0;
+  snap.forEach((d) => {
+    const data = d.data() as MilkEntry;
+    if (data.entryDate && data.entryDate.startsWith(monthKey)) {
+      batch.update(d.ref, { baseRate: newRate, updatedAt: nowIso() });
+      count++;
+    }
+  });
+  if (count > 0) await batch.commit();
+  return count;
+}
+
 // ---------- Extras ----------
 export function listenExtras(uid: string, cb: (items: ExtraTxn[]) => void) {
   const q = query(userCol(uid, "extras"), orderBy("entryDate", "desc"));
@@ -139,7 +157,18 @@ export function listenSettings(uid: string, cb: (s: UserSettings | null) => void
   });
 }
 
-export async function saveSettings(uid: string, baseRate: number) {
+export async function saveSettings(
+  uid: string,
+  data: { baseRate: number; monthlyRates?: Record<string, number> }
+) {
   const ref = doc(db, "users", uid, "meta", "settings");
-  await setDoc(ref, { baseRate, updatedAt: nowIso() }, { merge: true });
+  await setDoc(
+    ref,
+    {
+      baseRate: data.baseRate,
+      ...(data.monthlyRates !== undefined ? { monthlyRates: data.monthlyRates } : {}),
+      updatedAt: nowIso(),
+    },
+    { merge: true }
+  );
 }

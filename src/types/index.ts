@@ -39,6 +39,8 @@ export interface ExtraTxn {
 
 export interface UserSettings {
   baseRate: number;
+  /** Month key YYYY-MM → rate for that month (used for new entries + bulk apply) */
+  monthlyRates?: Record<string, number>;
   updatedAt: string;
 }
 
@@ -53,3 +55,14 @@ export const KIND_LABELS: Record<ContactKind, string> = {
   customer: "Customer",
   supplier: "Supplier",
 };
+
+export function monthKeyFromDate(isoDate: string): string {
+  return isoDate.slice(0, 7);
+}
+
+export function currentMonthKey(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
