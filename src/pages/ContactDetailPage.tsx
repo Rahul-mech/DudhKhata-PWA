@@ -5,6 +5,8 @@ import {
   listenContacts,
   listenEntries,
   listenExtras,
+  removeEntry,
+  removeExtra,
 } from "../lib/db";
 import {
   contactBalance,
@@ -46,6 +48,16 @@ export default function ContactDetailPage() {
   const totalLitres = myEntries.reduce((s, e) => s + entryTotals(e).litres, 0);
   const totalMilkAmt = myEntries.reduce((s, e) => s + entryTotals(e).amount, 0);
 
+  const handleDeleteEntry = async (id: string) => {
+    if (!user || !confirm("Delete this entry? Calculation will update automatically.")) return;
+    await removeEntry(user.uid, id);
+  };
+
+  const handleDeleteExtra = async (id: string) => {
+    if (!user || !confirm("Delete this transaction?")) return;
+    await removeExtra(user.uid, id);
+  };
+
   if (!contact) {
     return (
       <div className="min-h-dvh bg-[var(--background)] flex items-center justify-center">
@@ -66,7 +78,6 @@ export default function ContactDetailPage() {
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-4 space-y-4">
-        {/* Summary cards */}
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
           <p className="text-xs text-[var(--muted-foreground)]">{KIND_LABELS[contact.kind]}</p>
           {contact.phone && (
@@ -79,9 +90,6 @@ export default function ContactDetailPage() {
                 balance >= 0 ? "text-[var(--collect)]" : "text-[var(--pay)]"
               }`}>
                 {formatInr(Math.abs(balance))}
-                <span className="ml-1 text-xs font-normal text-[var(--muted-foreground)]">
-                  {balance >= 0 ? (contact.kind === "customer" ? "to collect" : "to pay") : (contact.kind === "customer" ? "to pay" : "to collect")}
-                </span>
               </p>
             </div>
             <div>
@@ -94,7 +102,6 @@ export default function ContactDetailPage() {
           </p>
         </div>
 
-        {/* Milk entries table */}
         <section>
           <h2 className="mb-2 text-sm font-medium">Milk Entries ({myEntries.length})</h2>
           {myEntries.length === 0 ? (
@@ -102,50 +109,73 @@ export default function ContactDetailPage() {
               No milk entries yet
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)]">
-              <table className="w-full text-left text-xs">
-                <thead className="border-b border-[var(--border)] bg-[var(--muted)]">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">Date</th>
-                    <th className="px-2 py-2 font-medium text-right">M L</th>
-                    <th className="px-2 py-2 font-medium text-right">M Fat</th>
-                    <th className="px-2 py-2 font-medium text-right">E L</th>
-                    <th className="px-2 py-2 font-medium text-right">E Fat</th>
-                    <th className="px-3 py-2 font-medium text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border)]">
-                  {myEntries.map((e) => {
-                    const t = entryTotals(e);
-                    return (
-                      <tr key={e.id}>
-                        <td className="px-3 py-2 whitespace-nowrap">{e.entryDate}</td>
-                        <td className="px-2 py-2 text-right tabular-nums">{e.morningLitres || "-"}</td>
-                        <td className="px-2 py-2 text-right tabular-nums">{e.morningFat || "-"}</td>
-                        <td className="px-2 py-2 text-right tabular-nums">{e.eveningLitres || "-"}</td>
-                        <td className="px-2 py-2 text-right tabular-nums">{e.eveningFat || "-"}</td>
-                        <td className="px-3 py-2 text-right font-medium tabular-nums">{formatInr(t.amount)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="space-y-2">
+              {myEntries.map((e) => {
+                const t = entryTotals(e);
+                return (
+                  <div
+                    key={e.id}
+                    className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium">{e.entryDate}</p>
+                        <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                          M: {e.morningLitres || 0}L @ {e.morningFat || 0}%
+                          {" · "}
+                          E: {e.eveningLitres || 0}L @ {e.eveningFat || 0}%
+                        </p>
+                        <p className="mt-1 text-sm font-semibold tabular-nums text-[var(--primary)]">
+                          {formatInr(t.amount)}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 gap-2">
+                        <Link
+                          to={`/entry?edit=${e.id}`}
+                          className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-xs font-medium"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteEntry(e.id)}
+                          className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
 
-        {/* Extras */}
         {myExtras.length > 0 && (
           <section>
             <h2 className="mb-2 text-sm font-medium">Extra Transactions ({myExtras.length})</h2>
-            <div className="divide-y divide-[var(--border)] overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
+            <div className="space-y-2">
               {myExtras.map((x) => (
-                <div key={x.id} className="flex items-center justify-between px-4 py-3">
+                <div
+                  key={x.id}
+                  className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
+                >
                   <div>
                     <p className="text-sm font-medium">{EXTRA_LABELS[x.type]}</p>
-                    <p className="text-xs text-[var(--muted-foreground)]">{x.entryDate}{x.note ? ` · ${x.note}` : ""}</p>
+                    <p className="text-xs text-[var(--muted-foreground)]">
+                      {x.entryDate}
+                      {x.note ? ` · ${x.note}` : ""}
+                    </p>
+                    <p className="mt-0.5 text-sm font-medium tabular-nums">{formatInr(x.amount)}</p>
                   </div>
-                  <p className="text-sm font-medium tabular-nums">{formatInr(x.amount)}</p>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteExtra(x.id)}
+                    className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600"
+                  >
+                    Delete
+                  </button>
                 </div>
               ))}
             </div>

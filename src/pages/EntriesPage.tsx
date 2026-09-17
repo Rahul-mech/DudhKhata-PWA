@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { listenContacts, listenEntries } from "../lib/db";
+import { listenContacts, listenEntries, removeEntry } from "../lib/db";
 import { entryTotals, formatInr } from "../lib/calc";
 import type { Contact, MilkEntry } from "../types";
 
@@ -43,6 +43,11 @@ export default function EntriesPage() {
   const totalAmt = filtered.reduce((s, e) => s + entryTotals(e).amount, 0);
   const totalLitres = filtered.reduce((s, e) => s + entryTotals(e).litres, 0);
 
+  const handleDelete = async (id: string) => {
+    if (!user || !confirm("Delete this entry? Totals will update automatically.")) return;
+    await removeEntry(user.uid, id);
+  };
+
   return (
     <div className="min-h-dvh bg-[var(--background)] pb-8">
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)] px-4 py-3">
@@ -55,7 +60,6 @@ export default function EntriesPage() {
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-4 space-y-4">
-        {/* Filters */}
         <div className="grid grid-cols-2 gap-2">
           <select
             value={filterContact}
@@ -83,7 +87,6 @@ export default function EntriesPage() {
           </select>
         </div>
 
-        {/* Summary */}
         <div className="flex justify-between rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 text-sm">
           <span className="text-[var(--muted-foreground)]">
             {filtered.length} entries · {totalLitres.toFixed(2)} L
@@ -91,55 +94,60 @@ export default function EntriesPage() {
           <span className="font-semibold tabular-nums">{formatInr(totalAmt)}</span>
         </div>
 
-        {/* Table */}
         {filtered.length === 0 ? (
           <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted-foreground)]">
             No entries found
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-[var(--border)] bg-[var(--card)]">
-            <table className="w-full text-left text-xs">
-              <thead className="border-b border-[var(--border)] bg-[var(--muted)]">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Date</th>
-                  <th className="px-2 py-2 font-medium">Contact</th>
-                  <th className="px-2 py-2 font-medium text-right">M</th>
-                  <th className="px-2 py-2 font-medium text-right">E</th>
-                  <th className="px-3 py-2 font-medium text-right">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {filtered.map((e) => {
-                  const t = entryTotals(e);
-                  return (
-                    <tr key={e.id}>
-                      <td className="px-3 py-2 whitespace-nowrap">{e.entryDate}</td>
-                      <td className="px-2 py-2 max-w-[100px] truncate">
+          <div className="space-y-2">
+            {filtered.map((e) => {
+              const t = entryTotals(e);
+              return (
+                <div
+                  key={e.id}
+                  className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">
+                        {e.entryDate}{" · "}
                         <Link
                           to={`/contacts/${e.contactId}`}
                           className="text-[var(--primary)] hover:underline"
                         >
                           {nameOf(e.contactId)}
                         </Link>
-                      </td>
-                      <td className="px-2 py-2 text-right tabular-nums">
-                        {e.morningLitres ? `${e.morningLitres}@${e.morningFat}` : "-"}
-                      </td>
-                      <td className="px-2 py-2 text-right tabular-nums">
-                        {e.eveningLitres ? `${e.eveningLitres}@${e.eveningFat}` : "-"}
-                      </td>
-                      <td className="px-3 py-2 text-right font-medium tabular-nums">{formatInr(t.amount)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      </p>
+                      <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                        M: {e.morningLitres || 0}L @{e.morningFat || 0}%
+                        {" · "}
+                        E: {e.eveningLitres || 0}L @{e.eveningFat || 0}%
+                      </p>
+                      <p className="mt-1 text-sm font-semibold tabular-nums">
+                        {formatInr(t.amount)}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <Link
+                        to={`/entry?edit=${e.id}`}
+                        className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-xs font-medium"
+                      >
+                        Edit
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(e.id)}
+                        className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-
-        <p className="text-center text-xs text-[var(--muted-foreground)]">
-          Tip: Contact name pe click karke uska pura hisab dekh sakte ho
-        </p>
       </main>
     </div>
   );
