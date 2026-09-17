@@ -121,13 +121,13 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
             <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
-              Today&apos;s milk
+              Today milk
             </p>
             <p className="mt-1 text-xl font-semibold tabular-nums">{formatLitres(todayLitres)}</p>
           </div>
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
             <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
-              Today&apos;s amount
+              Today amount
             </p>
             <p className="mt-1 text-xl font-semibold tabular-nums">{formatInr(todayAmount)}</p>
           </div>
@@ -149,18 +149,17 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* This month - clickable for breakdown */}
         <button
           type="button"
           onClick={() => setShowBreakdown(!showBreakdown)}
           className="mt-3 w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-5 py-4 text-left"
         >
           <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
-            This month {showBreakdown ? "▲" : "▼"}
+            This month {showBreakdown ? "^" : "v"}
           </p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">{formatInr(monthAmount)}</p>
           <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-            Base rate: ₹{baseRate} · Tap for contact-wise
+            Default rate: Rs {baseRate} · Tap for contact-wise
           </p>
         </button>
 
@@ -190,33 +189,40 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div className="mt-5 grid grid-cols-4 gap-2">
+        <div className="mt-5 grid grid-cols-5 gap-2">
           <Link
             to="/entry"
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
+            className="flex flex-col items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
           >
-            <span className="text-lg">+</span>
+            <span>+</span>
             Entry
           </Link>
           <Link
             to="/contacts"
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
+            className="flex flex-col items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
           >
-            <span className="text-lg">☰</span>
+            <span>C</span>
             Contacts
           </Link>
           <Link
             to="/entries"
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
+            className="flex flex-col items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
           >
-            <span className="text-lg">≡</span>
+            <span>=</span>
             List
           </Link>
           <Link
-            to="/extra"
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
+            to="/reports"
+            className="flex flex-col items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
           >
-            <span className="text-lg">₹</span>
+            <span>R</span>
+            Report
+          </Link>
+          <Link
+            to="/extra"
+            className="flex flex-col items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
+          >
+            <span>Rs</span>
             Extra
           </Link>
         </div>
