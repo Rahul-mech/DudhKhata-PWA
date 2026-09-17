@@ -36,7 +36,9 @@ export default function ContactsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (!user || !confirm("Delete this contact?")) return;
     await removeContact(user.uid, id);
   };
@@ -146,9 +148,10 @@ export default function ContactsPage() {
         ) : (
           <div className="space-y-2">
             {contacts.map((c) => (
-              <div
+              <Link
                 key={c.id}
-                className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
+                to={`/contacts/${c.id}`}
+                className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3 hover:bg-[var(--muted)]"
               >
                 <div>
                   <p className="font-medium">{c.name}</p>
@@ -158,12 +161,12 @@ export default function ContactsPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => handleDelete(c.id)}
-                  className="text-xs text-red-600"
+                  onClick={(e) => handleDelete(e, c.id)}
+                  className="text-xs text-red-600 px-2"
                 >
                   Delete
                 </button>
-              </div>
+              </Link>
             ))}
           </div>
         )}

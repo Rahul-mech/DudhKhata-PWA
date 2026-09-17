@@ -3,9 +3,11 @@ import { useAuth } from "./hooks/useAuth";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import ContactsPage from "./pages/ContactsPage";
+import ContactDetailPage from "./pages/ContactDetailPage";
 import EntryPage from "./pages/EntryPage";
 import ExtraPage from "./pages/ExtraPage";
 import SettingsPage from "./pages/SettingsPage";
+import EntriesPage from "./pages/EntriesPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -52,6 +54,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ContactsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/contacts/:contactId"
+        element={
+          <ProtectedRoute>
+            <ContactDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/entries"
+        element={
+          <ProtectedRoute>
+            <EntriesPage />
           </ProtectedRoute>
         }
       />
