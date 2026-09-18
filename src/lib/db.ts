@@ -8,6 +8,7 @@ import {
   orderBy,
   getDocs,
   writeBatch,
+  where,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { Contact, MilkEntry, ExtraTxn, UserSettings } from "../types";
@@ -42,8 +43,29 @@ export async function saveContact(uid: string, data: Partial<Contact> & { name: 
   return id;
 }
 
+/**
+ * Delete contact + all related milk entries and extras in one batch.
+ * Prevents orphan data that inflates "This Month Milk" while disappearing from outstanding.
+ */
 export async function removeContact(uid: string, id: string) {
-  await deleteDoc(doc(db, "users", uid, "contacts", id));
+  const batch = writeBatch(db);
+
+  // 1. Delete the contact itself
+  batch.delete(doc(db, "users", uid, "contacts", id));
+
+  // 2. Delete all milk entries for this contact
+  const entriesSnap = await getDocs(
+    query(userCol(uid, "entries"), where("contactId", "==", id))
+  );
+  entriesSnap.forEach((d) => batch.delete(d.ref));
+
+  // 3. Delete all extras for this contact
+  const extrasSnap = await getDocs(
+    query(userCol(uid, "extras"), where("contactId", "==", id))
+  );
+  extrasSnap.forEach((d) => batch.delete(d.ref));
+
+  await batch.commit();
 }
 
 // ---------- Entries ----------
