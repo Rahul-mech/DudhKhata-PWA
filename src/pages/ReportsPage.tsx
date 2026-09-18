@@ -12,6 +12,12 @@ import {
   formatInr,
   formatLitres,
 } from "../lib/calc";
+import {
+  buildMonthSummaryHtml,
+  buildMonthSummaryText,
+  printHtml,
+  shareOnWhatsApp,
+} from "../lib/bill";
 import type { Contact, MilkEntry, ExtraTxn } from "../types";
 import { KIND_LABELS, currentMonthKey } from "../types";
 
@@ -77,6 +83,41 @@ export default function ReportsPage() {
 
   const grandSettlement = rows.reduce((s, r) => s + r.settlement, 0);
 
+  const summaryRows = rows.map((r) => ({
+    name: r.contact.name,
+    kind: KIND_LABELS[r.contact.kind],
+    entryCount: r.entryCount,
+    litres: r.litres,
+    milkAmt: r.milkAmt,
+    extraNet: r.extraNet,
+    settlement: r.settlement,
+  }));
+
+  const handlePrint = () => {
+    printHtml(
+      `DudhKhata ${month}`,
+      buildMonthSummaryHtml({
+        month,
+        rows: summaryRows,
+        totalLitres,
+        totalMilk,
+        grandSettlement,
+      })
+    );
+  };
+
+  const handleWhatsApp = () => {
+    shareOnWhatsApp(
+      buildMonthSummaryText({
+        month,
+        rows: summaryRows,
+        totalLitres,
+        totalMilk,
+        grandSettlement,
+      })
+    );
+  };
+
   return (
     <div className="min-h-dvh bg-[var(--background)] pb-8">
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)] px-4 py-3">
@@ -104,6 +145,23 @@ export default function ReportsPage() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="rounded-xl border border-[var(--border)] bg-[var(--card)] py-2.5 text-sm font-medium"
+          >
+            Print / PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleWhatsApp}
+            className="rounded-xl bg-[#25D366] py-2.5 text-sm font-medium text-white"
+          >
+            WhatsApp
+          </button>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -162,7 +220,7 @@ export default function ReportsPage() {
         </section>
 
         <p className="text-center text-xs text-[var(--muted-foreground)]">
-          Contact pe click to open that month detail
+          Contact pe click for detail bill · Print opens Save as PDF
         </p>
       </main>
     </div>
