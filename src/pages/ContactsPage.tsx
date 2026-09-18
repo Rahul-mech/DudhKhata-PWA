@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { listenContacts, saveContact, removeContact } from "../lib/db";
@@ -8,6 +8,7 @@ import { KIND_LABELS } from "../types";
 export default function ContactsPage() {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -20,6 +21,20 @@ export default function ContactsPage() {
     if (!user) return;
     return listenContacts(user.uid, setContacts);
   }, [user]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return contacts;
+    return contacts.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        (c.phone || "").includes(q) ||
+        (c.note || "").toLowerCase().includes(q)
+    );
+  }, [contacts, query]);
+
+  const customers = filtered.filter((c) => c.kind === "customer");
+  const suppliers = filtered.filter((c) => c.kind === "supplier");
 
   const resetForm = () => {
     setEditId(null);
@@ -76,16 +91,54 @@ export default function ContactsPage() {
     await removeContact(user.uid, id);
   };
 
+  const renderGroup = (title: string, list: Contact[]) => {
+    if (list.length === 0) return null;
+    return (
+      <section className="mb-4">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+          {title}
+        </p>
+        <div className="space-y-2">
+          {list.map((c) => (
+            <div
+              key={c.id}
+              className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
+            >
+              <Link to={`/contacts/${c.id}`} className="min-w-0 flex-1">
+                <p className="font-medium">{c.name}</p>
+                <p className="text-xs text-[var(--muted-foreground)]">
+                  {KIND_LABELS[c.kind]}
+                  {c.phone ? ` · ${c.phone}` : ""}
+                </p>
+              </Link>
+              <div className="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => openEdit(e, c)}
+                  className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-xs font-medium"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => handleDelete(e, c.id)}
+                  className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  };
+
   return (
     <div className="min-h-dvh bg-[var(--background)]">
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)] px-4 py-3">
-        <div className="mx-auto flex max-w-lg items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/" className="text-sm text-[var(--muted-foreground)]">
-              Back
-            </Link>
-            <h1 className="text-lg font-semibold">Contacts</h1>
-          </div>
+        <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
+          <h1 className="text-lg font-semibold">Contacts</h1>
           <button
             onClick={openAdd}
             className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-white"
@@ -96,6 +149,13 @@ export default function ContactsPage() {
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-4">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search contacts..."
+          className="mb-4 w-full rounded-xl border border-[var(--border)] bg-[var(--card)] px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)]"
+        />
+
         {showForm && (
           <form
             onSubmit={handleSave}
@@ -193,39 +253,13 @@ export default function ContactsPage() {
               Add first contact
             </button>
           </div>
+        ) : filtered.length === 0 ? (
+          <p className="text-center text-sm text-[var(--muted-foreground)]">No match for search</p>
         ) : (
-          <div className="space-y-2">
-            {contacts.map((c) => (
-              <div
-                key={c.id}
-                className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
-              >
-                <Link to={`/contacts/${c.id}`} className="min-w-0 flex-1">
-                  <p className="font-medium">{c.name}</p>
-                  <p className="text-xs text-[var(--muted-foreground)]">
-                    {KIND_LABELS[c.kind]}
-                    {c.phone ? ` · ${c.phone}` : ""}
-                  </p>
-                </Link>
-                <div className="flex shrink-0 gap-2">
-                  <button
-                    type="button"
-                    onClick={(e) => openEdit(e, c)}
-                    className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-xs font-medium"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => handleDelete(e, c.id)}
-                    className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <>
+            {renderGroup("Customers", customers)}
+            {renderGroup("Suppliers", suppliers)}
+          </>
         )}
       </main>
     </div>

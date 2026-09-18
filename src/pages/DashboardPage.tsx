@@ -104,72 +104,99 @@ export default function DashboardPage() {
     })),
   ]
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
-    .slice(0, 8);
+    .slice(0, 6);
 
   return (
-    <div className="min-h-dvh bg-[var(--background)] pb-20">
-      <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)] px-4 py-3">
+    <div className="min-h-dvh bg-[var(--background)]">
+      <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)]/95 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-lg items-center justify-between">
-          <h1 className="text-lg font-semibold text-[var(--primary)]">DudhKhata</h1>
-          <Link to="/settings" className="text-sm text-[var(--muted-foreground)]">
+          <div>
+            <h1 className="text-lg font-semibold tracking-tight text-[var(--primary)]">
+              DudhKhata
+            </h1>
+            <p className="text-xs text-[var(--muted-foreground)]">{today}</p>
+          </div>
+          <Link
+            to="/settings"
+            className="rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-xs font-medium text-[var(--muted-foreground)]"
+          >
             Settings
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-lg px-4 py-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
-              Today milk
-            </p>
-            <p className="mt-1 text-xl font-semibold tabular-nums">{formatLitres(todayLitres)}</p>
+      <main className="mx-auto max-w-lg px-4 py-4 space-y-4">
+        {/* TODAY */}
+        <section>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+            Today
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
+              <p className="text-xs text-[var(--muted-foreground)]">Milk</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
+                {formatLitres(todayLitres)}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
+              <p className="text-xs text-[var(--muted-foreground)]">Amount</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
+                {formatInr(todayAmount)}
+              </p>
+            </div>
           </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
-              Today amount
-            </p>
-            <p className="mt-1 text-xl font-semibold tabular-nums">{formatInr(todayAmount)}</p>
-          </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
-              To collect
-            </p>
-            <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--collect)]">
-              {formatInr(toCollect)}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
-              To pay
-            </p>
-            <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--pay)]">
-              {formatInr(toPay)}
-            </p>
-          </div>
-        </div>
+        </section>
 
+        {/* MONEY */}
+        <section>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+            Money
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
+              <p className="text-xs text-[var(--muted-foreground)]">To collect</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--collect)]">
+                {formatInr(toCollect)}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
+              <p className="text-xs text-[var(--muted-foreground)]">To pay</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--pay)]">
+                {formatInr(toPay)}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <Link
+          to="/entry"
+          className="flex w-full items-center justify-center rounded-2xl bg-[var(--primary)] py-3.5 text-sm font-semibold text-white shadow-sm active:opacity-90"
+        >
+          + Add Milk Entry
+        </Link>
+
+        {/* This month */}
         <button
           type="button"
           onClick={() => setShowBreakdown(!showBreakdown)}
-          className="mt-3 w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-5 py-4 text-left"
+          className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-5 py-4 text-left"
         >
-          <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
-            This month {showBreakdown ? "^" : "v"}
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+            This month {showBreakdown ? "▲" : "▼"}
           </p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">{formatInr(monthAmount)}</p>
           <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-            Default rate: Rs {baseRate} · Tap for contact-wise
+            Rate default Rs {baseRate} · Tap contact-wise
           </p>
         </button>
 
         {showBreakdown && contactRows.length > 0 && (
-          <div className="mt-2 divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]">
+          <div className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]">
             {contactRows.map(({ contact, balance, milkAmt }) => (
               <Link
                 key={contact.id}
                 to={`/contacts/${contact.id}`}
-                className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-[var(--muted)]"
+                className="flex items-center justify-between gap-3 px-4 py-3 active:bg-[var(--muted)]"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium">{contact.name}</p>
@@ -189,55 +216,23 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <div className="mt-5 grid grid-cols-5 gap-2">
-          <Link
-            to="/entry"
-            className="flex flex-col items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
-          >
-            <span>+</span>
-            Entry
-          </Link>
-          <Link
-            to="/contacts"
-            className="flex flex-col items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
-          >
-            <span>C</span>
-            Contacts
-          </Link>
-          <Link
-            to="/entries"
-            className="flex flex-col items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
-          >
-            <span>=</span>
-            List
-          </Link>
-          <Link
-            to="/reports"
-            className="flex flex-col items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
-          >
-            <span>R</span>
-            Report
-          </Link>
-          <Link
-            to="/extra"
-            className="flex flex-col items-center gap-1 rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-xs font-medium"
-          >
-            <span>Rs</span>
-            Extra
-          </Link>
-        </div>
-
-        <section className="mt-8">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-base font-medium">Recent</h2>
-            <Link to="/entries" className="text-sm text-[var(--primary)]">
+        {/* Recent */}
+        <section>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+              Recent
+            </p>
+            <Link to="/entries" className="text-xs font-medium text-[var(--primary)]">
               View all
             </Link>
           </div>
           {activity.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)] p-8 text-center">
               <p className="text-sm text-[var(--muted-foreground)]">No entries yet</p>
-              <Link to="/contacts" className="mt-2 inline-block text-sm font-medium text-[var(--primary)]">
+              <Link
+                to="/contacts"
+                className="mt-2 inline-block text-sm font-medium text-[var(--primary)]"
+              >
                 Add a contact first
               </Link>
             </div>
@@ -247,7 +242,7 @@ export default function DashboardPage() {
                 <Link
                   key={row.id}
                   to={`/contacts/${row.contactId}`}
-                  className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-[var(--muted)]"
+                  className="flex items-center justify-between gap-3 px-4 py-3 active:bg-[var(--muted)]"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{row.title}</p>

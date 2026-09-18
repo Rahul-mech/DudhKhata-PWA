@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
+import AppShell from "./components/layout/AppShell";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import ContactsPage from "./pages/ContactsPage";
@@ -9,6 +10,7 @@ import ExtraPage from "./pages/ExtraPage";
 import SettingsPage from "./pages/SettingsPage";
 import EntriesPage from "./pages/EntriesPage";
 import ReportsPage from "./pages/ReportsPage";
+import MorePage from "./pages/MorePage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -22,7 +24,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
-  return <>{children}</>;
+  return <AppShell>{children}</AppShell>;
 }
 
 export default function App() {
@@ -47,6 +49,7 @@ export default function App() {
       <Route path="/entry" element={<ProtectedRoute><EntryPage /></ProtectedRoute>} />
       <Route path="/extra" element={<ProtectedRoute><ExtraPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+      <Route path="/more" element={<ProtectedRoute><MorePage /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
