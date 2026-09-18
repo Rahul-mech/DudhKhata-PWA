@@ -1,19 +1,21 @@
 @import "tailwindcss";
 
+/* Dairy Ledger palette — milk cream, ghee accent, khata ink */
 :root {
-  --background: #f4f6f8;
-  --foreground: #0f172a;
+  --background: #fbf8f1;
+  --foreground: #22201b;
   --card: #ffffff;
-  --primary: #1e4d6b;
-  --primary-hover: #163a52;
+  --primary: #c98a2c;
+  --primary-hover: #96631a;
   --primary-foreground: #ffffff;
-  --muted: #eef2f6;
-  --muted-foreground: #64748b;
-  --border: #e2e8f0;
-  --collect: #15803d;
-  --pay: #b91c1c;
-  --ring: rgba(30, 77, 107, 0.25);
+  --muted: #f3eee3;
+  --muted-foreground: #6b6458;
+  --border: #e8e1d1;
+  --collect: #2f6b4f;
+  --pay: #b23b3b;
+  --ring: rgba(201, 138, 44, 0.28);
   --nav-height: 64px;
+  --header: #ffffff;
 }
 
 * {
@@ -37,12 +39,10 @@ body {
   min-height: 100dvh;
 }
 
-/* Tabular numbers for money */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
 
-/* Safe area for notched phones */
 .pb-nav {
   padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 8px);
 }
@@ -51,7 +51,6 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Action sheet animation */
 @keyframes sheet-up {
   from {
     transform: translateY(100%);
@@ -78,4 +77,11 @@ body {
 
 .scrim-enter {
   animation: fade-in 0.18s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-enter,
+  .scrim-enter {
+    animation: none;
+  }
 }
