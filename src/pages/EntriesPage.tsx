@@ -5,6 +5,7 @@ import { listenContacts, listenEntries, removeEntry } from "../lib/db";
 import { entryTotals, formatInr } from "../lib/calc";
 import type { Contact, MilkEntry } from "../types";
 
+/** Ledger job: chronological log of milk entries · edit/delete · filter */
 export default function EntriesPage() {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -51,11 +52,11 @@ export default function EntriesPage() {
   return (
     <div className="min-h-dvh bg-[var(--background)] pb-8">
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)] px-4 py-3">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
-          <Link to="/" className="text-sm text-[var(--muted-foreground)]">
-            ← Back
-          </Link>
-          <h1 className="text-lg font-semibold">All Entries</h1>
+        <div className="mx-auto max-w-lg">
+          <h1 className="text-lg font-semibold">Ledger</h1>
+          <p className="text-xs text-[var(--muted-foreground)]">
+            Every milk entry by date · edit here · not a contact list
+          </p>
         </div>
       </header>
 
@@ -110,13 +111,8 @@ export default function EntriesPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium">
-                        {e.entryDate}{" · "}
-                        <Link
-                          to={`/contacts/${e.contactId}`}
-                          className="text-[var(--primary)] hover:underline"
-                        >
-                          {nameOf(e.contactId)}
-                        </Link>
+                        {e.entryDate}
+                        <span className="text-[var(--muted-foreground)]"> · {nameOf(e.contactId)}</span>
                       </p>
                       <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                         M: {e.morningLitres || 0}L @{e.morningFat || 0}%
