@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { listenContacts, saveContact, removeContact } from "../lib/db";
 import type { Contact, ContactKind } from "../types";
 import { KIND_LABELS } from "../types";
 
+/**
+ * Contacts job: list + add + edit + delete only.
+ * No settlement, no entry history (that is Ledger / Monthly settlement).
+ */
 export default function ContactsPage() {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -54,9 +57,7 @@ export default function ContactsPage() {
     setShowForm(true);
   };
 
-  const openEdit = (e: React.MouseEvent, c: Contact) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const openEdit = (c: Contact) => {
     setEditId(c.id);
     setName(c.name);
     setPhone(c.phone || "");
@@ -84,9 +85,7 @@ export default function ContactsPage() {
     }
   };
 
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const handleDelete = async (id: string) => {
     if (!user || !confirm("Delete this contact?")) return;
     await removeContact(user.uid, id);
   };
@@ -104,24 +103,25 @@ export default function ContactsPage() {
               key={c.id}
               className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-3"
             >
-              <Link to={`/contacts/${c.id}`} className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1">
                 <p className="font-medium">{c.name}</p>
                 <p className="text-xs text-[var(--muted-foreground)]">
                   {KIND_LABELS[c.kind]}
                   {c.phone ? ` · ${c.phone}` : ""}
+                  {c.note ? ` · ${c.note}` : ""}
                 </p>
-              </Link>
+              </div>
               <div className="flex shrink-0 gap-2">
                 <button
                   type="button"
-                  onClick={(e) => openEdit(e, c)}
+                  onClick={() => openEdit(c)}
                   className="rounded-lg border border-[var(--border)] px-2.5 py-1 text-xs font-medium"
                 >
                   Edit
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => handleDelete(e, c.id)}
+                  onClick={() => handleDelete(c.id)}
                   className="rounded-lg border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600"
                 >
                   Delete
@@ -138,7 +138,12 @@ export default function ContactsPage() {
     <div className="min-h-dvh bg-[var(--background)]">
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)] px-4 py-3">
         <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
-          <h1 className="text-lg font-semibold">Contacts</h1>
+          <div>
+            <h1 className="text-lg font-semibold">Contacts</h1>
+            <p className="text-xs text-[var(--muted-foreground)]">
+              Add, edit, delete only — bills are under More
+            </p>
+          </div>
           <button
             onClick={openAdd}
             className="rounded-lg bg-[var(--primary)] px-3 py-1.5 text-sm font-medium text-white"

@@ -9,7 +9,6 @@ import {
   removeExtra,
 } from "../lib/db";
 import {
-  contactBalance,
   entryTotals,
   extraSigned,
   formatInr,
@@ -24,10 +23,14 @@ import {
 import type { Contact, MilkEntry, ExtraTxn } from "../types";
 import { EXTRA_LABELS, KIND_LABELS, currentMonthKey } from "../types";
 
+/**
+ * Person-month bill — opened only from Monthly Settlement.
+ * Back always returns to Reports, not Contacts.
+ */
 export default function ContactDetailPage() {
   const { contactId } = useParams<{ contactId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const monthParam = searchParams.get("month") || "all";
+  const monthParam = searchParams.get("month") || currentMonthKey();
   const { user } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [entries, setEntries] = useState<MilkEntry[]>([]);
@@ -55,20 +58,19 @@ export default function ContactDetailPage() {
     extras
       .filter((x) => x.contactId === contactId)
       .forEach((x) => set.add(x.entryDate.slice(0, 7)));
+    set.add(currentMonthKey());
     return Array.from(set).sort().reverse();
   }, [entries, extras, contactId]);
 
   const myEntries = entries
     .filter((e) => e.contactId === contactId)
-    .filter((e) => (monthParam === "all" ? true : e.entryDate.startsWith(monthParam)))
+    .filter((e) => e.entryDate.startsWith(monthParam))
     .sort((a, b) => (a.entryDate < b.entryDate ? 1 : -1));
 
   const myExtras = extras
     .filter((x) => x.contactId === contactId)
-    .filter((x) => (monthParam === "all" ? true : x.entryDate.startsWith(monthParam)))
+    .filter((x) => x.entryDate.startsWith(monthParam))
     .sort((a, b) => (a.entryDate < b.entryDate ? 1 : -1));
-
-  const allForBalance = contact ? contactBalance(contact, entries, extras) : 0;
 
   const totalLitres = myEntries.reduce((s, e) => s + entryTotals(e).litres, 0);
   const totalMilkAmt = myEntries.reduce((s, e) => s + entryTotals(e).amount, 0);
@@ -76,36 +78,17 @@ export default function ContactDetailPage() {
   if (contact) {
     for (const x of myExtras) extraNet += extraSigned(contact.kind, x);
   }
-  const monthSettlement = totalMilkAmt + extraNet;
-
-  const billMonth =
-    monthParam === "all"
-      ? months[0] || currentMonthKey()
-      : monthParam;
-
-  const billEntries =
-    monthParam === "all"
-      ? entries
-          .filter((e) => e.contactId === contactId && e.entryDate.startsWith(billMonth))
-          .sort((a, b) => (a.entryDate < b.entryDate ? 1 : -1))
-      : myEntries;
-
-  const billExtras =
-    monthParam === "all"
-      ? extras.filter(
-          (x) => x.contactId === contactId && x.entryDate.startsWith(billMonth)
-        )
-      : myExtras;
+  const settlement = totalMilkAmt + extraNet;
 
   const handlePrint = () => {
     if (!contact) return;
     printHtml(
-      `${contact.name} ${billMonth}`,
+      `${contact.name} ${monthParam}`,
       buildContactBillHtml({
         contact,
-        month: billMonth,
-        entries: billEntries,
-        extras: billExtras,
+        month: monthParam,
+        entries: myEntries,
+        extras: myExtras,
       })
     );
   };
@@ -115,16 +98,16 @@ export default function ContactDetailPage() {
     shareOnWhatsApp(
       buildContactBillText({
         contact,
-        month: billMonth,
-        entries: billEntries,
-        extras: billExtras,
+        month: monthParam,
+        entries: myEntries,
+        extras: myExtras,
       }),
       contact.phone
     );
   };
 
   const handleDeleteEntry = async (id: string) => {
-    if (!user || !confirm("Delete this entry? Calculation will update automatically.")) return;
+    if (!user || !confirm("Delete this entry?")) return;
     await removeEntry(user.uid, id);
   };
 
@@ -136,7 +119,7 @@ export default function ContactDetailPage() {
   if (!contact) {
     return (
       <div className="min-h-dvh bg-[var(--background)] flex items-center justify-center">
-        <p className="text-sm text-[var(--muted-foreground)]">Loading contact...</p>
+        <p className="text-sm text-[var(--muted-foreground)]">Loading...</p>
       </div>
     );
   }
@@ -144,68 +127,39 @@ export default function ContactDetailPage() {
   return (
     <div className="min-h-dvh bg-[var(--background)] pb-8">
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)] px-4 py-3">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
-          <Link to="/contacts" className="text-sm text-[var(--muted-foreground)]">
-            Back
+        <div className="mx-auto max-w-lg">
+          <Link to="/reports" className="text-sm text-[var(--muted-foreground)]">
+            ← Monthly settlement
           </Link>
           <h1 className="text-lg font-semibold truncate">{contact.name}</h1>
+          <p className="text-xs text-[var(--muted-foreground)]">
+            {KIND_LABELS[contact.kind]} · month bill
+          </p>
         </div>
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-4 space-y-4">
         <div>
-          <label className="mb-1 block text-xs text-[var(--muted-foreground)]">Month filter</label>
+          <label className="mb-1 block text-xs text-[var(--muted-foreground)]">Month</label>
           <select
             value={monthParam}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v === "all") setSearchParams({});
-              else setSearchParams({ month: v });
-            }}
+            onChange={(e) => setSearchParams({ month: e.target.value })}
             className="w-full rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-2 text-sm"
           >
-            <option value="all">All months (lifetime)</option>
             {months.map((m) => (
               <option key={m} value={m}>
                 {m}
               </option>
             ))}
-            {!months.includes(currentMonthKey()) && (
-              <option value={currentMonthKey()}>{currentMonthKey()}</option>
-            )}
           </select>
         </div>
 
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-          <p className="text-xs text-[var(--muted-foreground)]">{KIND_LABELS[contact.kind]}</p>
-          {contact.phone && (
-            <p className="text-sm text-[var(--muted-foreground)]">{contact.phone}</p>
-          )}
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <div>
-              <p className="text-xs text-[var(--muted-foreground)]">
-                {monthParam === "all" ? "Lifetime balance" : "Month settlement"}
-              </p>
-              <p
-                className={`text-xl font-semibold tabular-nums ${
-                  (monthParam === "all" ? allForBalance : monthSettlement) >= 0
-                    ? "text-[var(--collect)]"
-                    : "text-[var(--pay)]"
-                }`}
-              >
-                {formatInr(
-                  Math.abs(monthParam === "all" ? allForBalance : monthSettlement)
-                )}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-[var(--muted-foreground)]">Milk (filtered)</p>
-              <p className="text-xl font-semibold tabular-nums">{formatLitres(totalLitres)}</p>
-            </div>
-          </div>
+          <p className="text-xs text-[var(--muted-foreground)]">Settlement this month</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">{formatInr(settlement)}</p>
           <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-            Milk amount: {formatInr(totalMilkAmt)}
-            {extraNet !== 0 ? ` · Extras: ${formatInr(extraNet)}` : ""}
+            Milk {formatInr(totalMilkAmt)} · {formatLitres(totalLitres)}
+            {extraNet !== 0 ? ` · Extras ${formatInr(extraNet)}` : ""}
           </p>
         </div>
 
@@ -225,16 +179,12 @@ export default function ContactDetailPage() {
             WhatsApp bill
           </button>
         </div>
-        <p className="text-center text-xs text-[var(--muted-foreground)]">
-          Bill uses month: {billMonth}
-          {monthParam === "all" ? " (latest month when All selected)" : ""}
-        </p>
 
         <section>
-          <h2 className="mb-2 text-sm font-medium">Milk Entries ({myEntries.length})</h2>
+          <h2 className="mb-2 text-sm font-medium">Entries ({myEntries.length})</h2>
           {myEntries.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)] p-6 text-center text-sm text-[var(--muted-foreground)]">
-              No milk entries
+              No milk entries this month
             </div>
           ) : (
             <div className="space-y-2">
@@ -250,7 +200,7 @@ export default function ContactDetailPage() {
                         <p className="text-sm font-medium">{e.entryDate}</p>
                         <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                           M: {e.morningLitres || 0}L @ {e.morningFat || 0}% · E:{" "}
-                          {e.eveningLitres || 0}L @ {e.eveningFat || 0}% · Rate {e.baseRate}
+                          {e.eveningLitres || 0}L @ {e.eveningFat || 0}%
                         </p>
                         <p className="mt-1 text-sm font-semibold tabular-nums text-[var(--primary)]">
                           {formatInr(t.amount)}

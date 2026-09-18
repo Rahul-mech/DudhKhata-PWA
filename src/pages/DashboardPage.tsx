@@ -15,12 +15,11 @@ import {
   todayIsoDate,
 } from "../lib/calc";
 import type { Contact, MilkEntry, ExtraTxn } from "../types";
-import { EXTRA_LABELS } from "../types";
+import { EXTRA_LABELS, KIND_LABELS } from "../types";
 
 /**
- * Home job: TODAY snapshot + money overview + quick add + recent feed.
- * Not a contact browser — that is Contacts tab.
- * Not a month settlement — that is Reports (More → Monthly Settlement).
+ * Home: today + outstanding + add + this-month milk breakdown (who contributed)
+ * Does NOT open Monthly Settlement or Ledger.
  */
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -28,6 +27,7 @@ export default function DashboardPage() {
   const [entries, setEntries] = useState<MilkEntry[]>([]);
   const [extras, setExtras] = useState<ExtraTxn[]>([]);
   const [baseRate, setBaseRate] = useState(90);
+  const [showMonthBreak, setShowMonthBreak] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -46,14 +46,28 @@ export default function DashboardPage() {
   }, [user]);
 
   const today = todayIsoDate();
+  const monthKey = today.slice(0, 7);
+  const monthStart = today.slice(0, 8) + "01";
+
   const todayEntries = entries.filter((e) => e.entryDate === today);
   const todayLitres = todayEntries.reduce((s, e) => s + entryTotals(e).litres, 0);
   const todayAmount = todayEntries.reduce((s, e) => s + entryTotals(e).amount, 0);
 
-  const monthStart = today.slice(0, 8) + "01";
-  const monthAmount = entries
-    .filter((e) => e.entryDate >= monthStart && e.entryDate <= today)
-    .reduce((s, e) => s + entryTotals(e).amount, 0);
+  const monthEntries = entries.filter(
+    (e) => e.entryDate >= monthStart && e.entryDate <= today
+  );
+  const monthAmount = monthEntries.reduce((s, e) => s + entryTotals(e).amount, 0);
+
+  // Who made up this month's milk total (amounts only — not settlement page)
+  const monthByContact = contacts
+    .map((c) => {
+      const mine = monthEntries.filter((e) => e.contactId === c.id);
+      const amount = mine.reduce((s, e) => s + entryTotals(e).amount, 0);
+      const litres = mine.reduce((s, e) => s + entryTotals(e).litres, 0);
+      return { contact: c, amount, litres, count: mine.length };
+    })
+    .filter((r) => r.count > 0)
+    .sort((a, b) => b.amount - a.amount);
 
   let toCollect = 0;
   let toPay = 0;
@@ -142,7 +156,7 @@ export default function DashboardPage() {
 
         <section>
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-            Outstanding (all time)
+            Outstanding
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
@@ -167,38 +181,57 @@ export default function DashboardPage() {
           + Add Milk Entry
         </Link>
 
-        {/* Month total → Reports only (no contact list here) */}
-        <Link
-          to="/reports"
-          className="block w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-5 py-4 text-left active:bg-[var(--muted)]"
+        {/* This month: expand = who contributed milk $ this month only */}
+        <button
+          type="button"
+          onClick={() => setShowMonthBreak(!showMonthBreak)}
+          className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-5 py-4 text-left"
         >
           <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-            This month milk
+            This month milk {showMonthBreak ? "▲" : "▼"}
           </p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">{formatInr(monthAmount)}</p>
           <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-            Default rate Rs {baseRate} · Open monthly settlement →
+            {monthKey} · rate Rs {baseRate} · tap for who contributed
           </p>
-        </Link>
+        </button>
+
+        {showMonthBreak && (
+          <div className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]">
+            {monthByContact.length === 0 ? (
+              <p className="px-4 py-6 text-center text-sm text-[var(--muted-foreground)]">
+                No milk entries this month yet
+              </p>
+            ) : (
+              monthByContact.map(({ contact, amount, litres, count }) => (
+                <div
+                  key={contact.id}
+                  className="flex items-center justify-between gap-3 px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{contact.name}</p>
+                    <p className="text-xs text-[var(--muted-foreground)]">
+                      {KIND_LABELS[contact.kind]} · {count} entries ·{" "}
+                      {formatLitres(litres)}
+                    </p>
+                  </div>
+                  <p className="tabular-nums text-sm font-semibold">{formatInr(amount)}</p>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         <section>
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-              Recent activity
-            </p>
-            <Link to="/entries" className="text-xs font-medium text-[var(--primary)]">
-              Full ledger →
-            </Link>
-          </div>
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
+            Recent activity
+          </p>
           {activity.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)] p-8 text-center">
               <p className="text-sm text-[var(--muted-foreground)]">No entries yet</p>
-              <Link
-                to="/contacts"
-                className="mt-2 inline-block text-sm font-medium text-[var(--primary)]"
-              >
-                Add a contact first
-              </Link>
+              <p className="mt-1 text-xs text-[var(--muted-foreground)]">
+                Use Contacts to add people, then + to enter milk
+              </p>
             </div>
           ) : (
             <div className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]">
@@ -219,10 +252,6 @@ export default function DashboardPage() {
             </div>
           )}
         </section>
-
-        <p className="text-center text-[11px] text-[var(--muted-foreground)] px-2">
-          People → Contacts · Day-by-day log → Ledger · Month bill → More
-        </p>
       </main>
     </div>
   );
