@@ -15,15 +15,19 @@ import {
   todayIsoDate,
 } from "../lib/calc";
 import type { Contact, MilkEntry, ExtraTxn } from "../types";
-import { EXTRA_LABELS, KIND_LABELS } from "../types";
+import { EXTRA_LABELS } from "../types";
 
+/**
+ * Home job: TODAY snapshot + money overview + quick add + recent feed.
+ * Not a contact browser — that is Contacts tab.
+ * Not a month settlement — that is Reports (More → Monthly Settlement).
+ */
 export default function DashboardPage() {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [entries, setEntries] = useState<MilkEntry[]>([]);
   const [extras, setExtras] = useState<ExtraTxn[]>([]);
   const [baseRate, setBaseRate] = useState(90);
-  const [showBreakdown, setShowBreakdown] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -53,23 +57,16 @@ export default function DashboardPage() {
 
   let toCollect = 0;
   let toPay = 0;
-  const contactRows = contacts
-    .map((c) => {
-      const bal = contactBalance(c, entries, extras);
-      if (c.kind === "customer") {
-        if (bal > 0) toCollect += bal;
-        else toPay += -bal;
-      } else {
-        if (bal > 0) toPay += bal;
-        else toCollect += -bal;
-      }
-      const milkAmt = entries
-        .filter((e) => e.contactId === c.id)
-        .reduce((s, e) => s + entryTotals(e).amount, 0);
-      return { contact: c, balance: bal, milkAmt };
-    })
-    .filter((r) => r.milkAmt !== 0 || r.balance !== 0)
-    .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance));
+  for (const c of contacts) {
+    const bal = contactBalance(c, entries, extras);
+    if (c.kind === "customer") {
+      if (bal > 0) toCollect += bal;
+      else toPay += -bal;
+    } else {
+      if (bal > 0) toPay += bal;
+      else toCollect += -bal;
+    }
+  }
 
   const nameOf = (id: string) => contacts.find((c) => c.id === id)?.name ?? "Contact";
 
@@ -79,7 +76,6 @@ export default function DashboardPage() {
     title: string;
     subtitle: string;
     amount: number;
-    contactId: string;
   };
 
   const activity: Activity[] = [
@@ -91,7 +87,6 @@ export default function DashboardPage() {
         title: nameOf(e.contactId),
         subtitle: `${formatLitres(t.litres)} milk`,
         amount: t.amount,
-        contactId: e.contactId,
       };
     }),
     ...extras.map((x) => ({
@@ -100,7 +95,6 @@ export default function DashboardPage() {
       title: nameOf(x.contactId),
       subtitle: EXTRA_LABELS[x.type],
       amount: x.amount,
-      contactId: x.contactId,
     })),
   ]
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
@@ -126,7 +120,6 @@ export default function DashboardPage() {
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-4 space-y-4">
-        {/* TODAY */}
         <section>
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
             Today
@@ -147,10 +140,9 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* MONEY */}
         <section>
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-            Money
+            Outstanding (all time)
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
@@ -175,55 +167,27 @@ export default function DashboardPage() {
           + Add Milk Entry
         </Link>
 
-        {/* This month */}
-        <button
-          type="button"
-          onClick={() => setShowBreakdown(!showBreakdown)}
-          className="w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-5 py-4 text-left"
+        {/* Month total → Reports only (no contact list here) */}
+        <Link
+          to="/reports"
+          className="block w-full rounded-2xl border border-[var(--border)] bg-[var(--card)] px-5 py-4 text-left active:bg-[var(--muted)]"
         >
           <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-            This month {showBreakdown ? "▲" : "▼"}
+            This month milk
           </p>
           <p className="mt-1 text-2xl font-semibold tabular-nums">{formatInr(monthAmount)}</p>
           <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-            Rate default Rs {baseRate} · Tap contact-wise
+            Default rate Rs {baseRate} · Open monthly settlement →
           </p>
-        </button>
+        </Link>
 
-        {showBreakdown && contactRows.length > 0 && (
-          <div className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]">
-            {contactRows.map(({ contact, balance, milkAmt }) => (
-              <Link
-                key={contact.id}
-                to={`/contacts/${contact.id}`}
-                className="flex items-center justify-between gap-3 px-4 py-3 active:bg-[var(--muted)]"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{contact.name}</p>
-                  <p className="text-xs text-[var(--muted-foreground)]">
-                    {KIND_LABELS[contact.kind]} · Milk {formatInr(milkAmt)}
-                  </p>
-                </div>
-                <p
-                  className={`tabular-nums text-sm font-medium ${
-                    balance >= 0 ? "text-[var(--collect)]" : "text-[var(--pay)]"
-                  }`}
-                >
-                  {formatInr(Math.abs(balance))}
-                </p>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* Recent */}
         <section>
           <div className="mb-2 flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-              Recent
+              Recent activity
             </p>
             <Link to="/entries" className="text-xs font-medium text-[var(--primary)]">
-              View all
+              Full ledger →
             </Link>
           </div>
           {activity.length === 0 ? (
@@ -239,10 +203,9 @@ export default function DashboardPage() {
           ) : (
             <div className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]">
               {activity.map((row) => (
-                <Link
+                <div
                   key={row.id}
-                  to={`/contacts/${row.contactId}`}
-                  className="flex items-center justify-between gap-3 px-4 py-3 active:bg-[var(--muted)]"
+                  className="flex items-center justify-between gap-3 px-4 py-3"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{row.title}</p>
@@ -251,11 +214,15 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <p className="tabular-nums text-sm font-medium">{formatInr(row.amount)}</p>
-                </Link>
+                </div>
               ))}
             </div>
           )}
         </section>
+
+        <p className="text-center text-[11px] text-[var(--muted-foreground)] px-2">
+          People → Contacts · Day-by-day log → Ledger · Month bill → More
+        </p>
       </main>
     </div>
   );

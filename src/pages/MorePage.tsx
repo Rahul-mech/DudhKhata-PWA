@@ -4,13 +4,13 @@ import { useAuth } from "../hooks/useAuth";
 const links = [
   {
     to: "/reports",
-    title: "Monthly Settlement",
-    desc: "Contact-wise totals, print & WhatsApp",
+    title: "Monthly settlement",
+    desc: "One month totals · print PDF · WhatsApp summary",
   },
   {
     to: "/settings",
     title: "Settings",
-    desc: "Base rate, apply rate to month, sign out",
+    desc: "Base rate, apply rate to a month, sign out",
   },
 ];
 
@@ -29,6 +29,11 @@ export default function MorePage() {
       </header>
 
       <main className="mx-auto max-w-lg space-y-3 px-4 py-4">
+        <p className="text-xs text-[var(--muted-foreground)] px-1">
+          Where to go: Home = today · Contacts = people · Ledger = every entry by date ·
+          here = month bill & settings
+        </p>
+
         {links.map((l) => (
           <Link
             key={l.to}

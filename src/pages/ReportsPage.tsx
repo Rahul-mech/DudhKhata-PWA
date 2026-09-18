@@ -25,6 +25,10 @@ function inMonth(date: string, monthKey: string) {
   return date.startsWith(monthKey);
 }
 
+/**
+ * Reports job: MONTH settlement numbers + Print/WhatsApp.
+ * Contact rows drill into that person's month bill — not a general contact browser.
+ */
 export default function ReportsPage() {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -121,18 +125,21 @@ export default function ReportsPage() {
   return (
     <div className="min-h-dvh bg-[var(--background)] pb-8">
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)] px-4 py-3">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
-          <Link to="/" className="text-sm text-[var(--muted-foreground)]">
-            Back
+        <div className="mx-auto max-w-lg">
+          <Link to="/more" className="text-sm text-[var(--muted-foreground)]">
+            ← More
           </Link>
-          <h1 className="text-lg font-semibold">Monthly Settlement</h1>
+          <h1 className="text-lg font-semibold">Monthly settlement</h1>
+          <p className="text-xs text-[var(--muted-foreground)]">
+            Month totals, print & WhatsApp — not your contact list
+          </p>
         </div>
       </header>
 
       <main className="mx-auto max-w-lg px-4 py-4 space-y-4">
         <div>
           <label className="mb-1 block text-xs font-medium text-[var(--muted-foreground)]">
-            Select month
+            Month
           </label>
           <select
             value={month}
@@ -179,8 +186,11 @@ export default function ReportsPage() {
 
         <section>
           <h2 className="mb-2 text-sm font-medium">
-            Contact-wise ({rows.length})
+            By person this month ({rows.length})
           </h2>
+          <p className="mb-2 text-xs text-[var(--muted-foreground)]">
+            Tap a row only to open that month&apos;s bill for one person
+          </p>
           {rows.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted-foreground)]">
               No data for this month
@@ -218,10 +228,6 @@ export default function ReportsPage() {
             </div>
           )}
         </section>
-
-        <p className="text-center text-xs text-[var(--muted-foreground)]">
-          Contact pe click for detail bill · Print opens Save as PDF
-        </p>
       </main>
     </div>
   );
