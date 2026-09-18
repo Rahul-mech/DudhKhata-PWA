@@ -15,6 +15,12 @@ import {
   formatInr,
   formatLitres,
 } from "../lib/calc";
+import {
+  buildContactBillHtml,
+  buildContactBillText,
+  printHtml,
+  shareOnWhatsApp,
+} from "../lib/bill";
 import type { Contact, MilkEntry, ExtraTxn } from "../types";
 import { EXTRA_LABELS, KIND_LABELS, currentMonthKey } from "../types";
 
@@ -62,9 +68,7 @@ export default function ContactDetailPage() {
     .filter((x) => (monthParam === "all" ? true : x.entryDate.startsWith(monthParam)))
     .sort((a, b) => (a.entryDate < b.entryDate ? 1 : -1));
 
-  const allForBalance = contact
-    ? contactBalance(contact, entries, extras)
-    : 0;
+  const allForBalance = contact ? contactBalance(contact, entries, extras) : 0;
 
   const totalLitres = myEntries.reduce((s, e) => s + entryTotals(e).litres, 0);
   const totalMilkAmt = myEntries.reduce((s, e) => s + entryTotals(e).amount, 0);
@@ -73,6 +77,51 @@ export default function ContactDetailPage() {
     for (const x of myExtras) extraNet += extraSigned(contact.kind, x);
   }
   const monthSettlement = totalMilkAmt + extraNet;
+
+  const billMonth =
+    monthParam === "all"
+      ? months[0] || currentMonthKey()
+      : monthParam;
+
+  const billEntries =
+    monthParam === "all"
+      ? entries
+          .filter((e) => e.contactId === contactId && e.entryDate.startsWith(billMonth))
+          .sort((a, b) => (a.entryDate < b.entryDate ? 1 : -1))
+      : myEntries;
+
+  const billExtras =
+    monthParam === "all"
+      ? extras.filter(
+          (x) => x.contactId === contactId && x.entryDate.startsWith(billMonth)
+        )
+      : myExtras;
+
+  const handlePrint = () => {
+    if (!contact) return;
+    printHtml(
+      `${contact.name} ${billMonth}`,
+      buildContactBillHtml({
+        contact,
+        month: billMonth,
+        entries: billEntries,
+        extras: billExtras,
+      })
+    );
+  };
+
+  const handleWhatsApp = () => {
+    if (!contact) return;
+    shareOnWhatsApp(
+      buildContactBillText({
+        contact,
+        month: billMonth,
+        entries: billEntries,
+        extras: billExtras,
+      }),
+      contact.phone
+    );
+  };
 
   const handleDeleteEntry = async (id: string) => {
     if (!user || !confirm("Delete this entry? Calculation will update automatically.")) return;
@@ -159,6 +208,27 @@ export default function ContactDetailPage() {
             {extraNet !== 0 ? ` · Extras: ${formatInr(extraNet)}` : ""}
           </p>
         </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="rounded-xl border border-[var(--border)] bg-[var(--card)] py-2.5 text-sm font-medium"
+          >
+            Print / PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleWhatsApp}
+            className="rounded-xl bg-[#25D366] py-2.5 text-sm font-medium text-white"
+          >
+            WhatsApp bill
+          </button>
+        </div>
+        <p className="text-center text-xs text-[var(--muted-foreground)]">
+          Bill uses month: {billMonth}
+          {monthParam === "all" ? " (latest month when All selected)" : ""}
+        </p>
 
         <section>
           <h2 className="mb-2 text-sm font-medium">Milk Entries ({myEntries.length})</h2>
