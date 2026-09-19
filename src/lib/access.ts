@@ -17,7 +17,7 @@ import { db } from "./firebase";
  * Example: "rahul@gmail.com"
  */
 export const OWNER_EMAILS: string[] = [
-  // "your.email@gmail.com",
+  // "gurumaincastle1@gmail.com",
 ];
 
 export type AccessStatus = "pending" | "approved" | "blocked";
