@@ -97,6 +97,16 @@ export default function AdminPage() {
       </header>
 
       <main className="mx-auto max-w-lg space-y-6 px-4 py-4">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-xs text-[var(--muted-foreground)]">
+          List me sirf woh log aate hain jo <strong>ek baar login</strong> kar chuke
+          hain (access record banne ke baad). Purane users jinke paas pehle se data
+          hai, unke login pe auto-approve ho jayega. Bilkul naye accounts pending
+          rahenge jab tak aap Approve na karo.
+          <br />
+          Saari Google accounts dekhne ke liye: Firebase Console → Authentication →
+          Users.
+        </div>
+
         <section>
           <h2 className="mb-2 text-sm font-medium">Pending ({pending.length})</h2>
           {pending.length === 0 ? (
@@ -112,11 +122,15 @@ export default function AdminPage() {
 
         <section>
           <h2 className="mb-2 text-sm font-medium">Approved ({approved.length})</h2>
-          <div className="space-y-2">
-            {approved.map((r) => (
-              <Row key={r.uid} r={r} />
-            ))}
-          </div>
+          {approved.length === 0 ? (
+            <p className="text-xs text-[var(--muted-foreground)]">No approved users yet</p>
+          ) : (
+            <div className="space-y-2">
+              {approved.map((r) => (
+                <Row key={r.uid} r={r} />
+              ))}
+            </div>
+          )}
         </section>
 
         {blocked.length > 0 && (
