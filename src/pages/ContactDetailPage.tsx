@@ -21,12 +21,8 @@ import {
   shareOnWhatsApp,
 } from "../lib/bill";
 import type { Contact, MilkEntry, ExtraTxn } from "../types";
-import { EXTRA_LABELS, KIND_LABELS, currentMonthKey } from "../types";
+import { EXTRA_LABELS, currentMonthKey } from "../types";
 
-/**
- * Person-month bill — opened only from Monthly Settlement.
- * Back always returns to Reports, not Contacts.
- */
 export default function ContactDetailPage() {
   const { contactId } = useParams<{ contactId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -75,9 +71,7 @@ export default function ContactDetailPage() {
   const totalLitres = myEntries.reduce((s, e) => s + entryTotals(e).litres, 0);
   const totalMilkAmt = myEntries.reduce((s, e) => s + entryTotals(e).amount, 0);
   let extraNet = 0;
-  if (contact) {
-    for (const x of myExtras) extraNet += extraSigned(contact.kind, x);
-  }
+  for (const x of myExtras) extraNet += extraSigned(x);
   const settlement = totalMilkAmt + extraNet;
 
   const handlePrint = () => {
@@ -132,9 +126,7 @@ export default function ContactDetailPage() {
             ← Monthly settlement
           </Link>
           <h1 className="text-lg font-semibold truncate">{contact.name}</h1>
-          <p className="text-xs text-[var(--muted-foreground)]">
-            {KIND_LABELS[contact.kind]} · month bill
-          </p>
+          <p className="text-xs text-[var(--muted-foreground)]">Month bill</p>
         </div>
       </header>
 
@@ -159,7 +151,7 @@ export default function ContactDetailPage() {
           <p className="mt-1 text-2xl font-semibold tabular-nums">{formatInr(settlement)}</p>
           <p className="mt-2 text-sm text-[var(--muted-foreground)]">
             Milk {formatInr(totalMilkAmt)} · {formatLitres(totalLitres)}
-            {extraNet !== 0 ? ` · Extras ${formatInr(extraNet)}` : ""}
+            {extraNet !== 0 ? ` · After advances ${formatInr(extraNet)}` : ""}
           </p>
         </div>
 

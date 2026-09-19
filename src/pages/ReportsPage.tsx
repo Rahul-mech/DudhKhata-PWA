@@ -19,16 +19,12 @@ import {
   shareOnWhatsApp,
 } from "../lib/bill";
 import type { Contact, MilkEntry, ExtraTxn } from "../types";
-import { KIND_LABELS, currentMonthKey } from "../types";
+import { currentMonthKey } from "../types";
 
 function inMonth(date: string, monthKey: string) {
   return date.startsWith(monthKey);
 }
 
-/**
- * Reports job: MONTH settlement numbers + Print/WhatsApp.
- * Contact rows drill into that person's month bill — not a general contact browser.
- */
 export default function ReportsPage() {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -70,7 +66,7 @@ export default function ReportsPage() {
       const litres = cEntries.reduce((s, e) => s + entryTotals(e).litres, 0);
       let extraNet = 0;
       for (const x of cExtras) {
-        extraNet += extraSigned(c.kind, x);
+        extraNet += extraSigned(x);
       }
       const settlement = milkAmt + extraNet;
       return {
@@ -89,7 +85,7 @@ export default function ReportsPage() {
 
   const summaryRows = rows.map((r) => ({
     name: r.contact.name,
-    kind: KIND_LABELS[r.contact.kind],
+    kind: "",
     entryCount: r.entryCount,
     litres: r.litres,
     milkAmt: r.milkAmt,
@@ -131,7 +127,7 @@ export default function ReportsPage() {
           </Link>
           <h1 className="text-lg font-semibold">Monthly settlement</h1>
           <p className="text-xs text-[var(--muted-foreground)]">
-            Month totals, print & WhatsApp — not your contact list
+            Milk total minus advances · print & WhatsApp
           </p>
         </div>
       </header>
@@ -180,7 +176,7 @@ export default function ReportsPage() {
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
             <p className="text-xs text-[var(--muted-foreground)]">Net settlement</p>
             <p className="mt-1 text-lg font-semibold tabular-nums">{formatInr(grandSettlement)}</p>
-            <p className="text-xs text-[var(--muted-foreground)]">Milk +/- advances</p>
+            <p className="text-xs text-[var(--muted-foreground)]">Milk − advances</p>
           </div>
         </div>
 
@@ -188,9 +184,6 @@ export default function ReportsPage() {
           <h2 className="mb-2 text-sm font-medium">
             By person this month ({rows.length})
           </h2>
-          <p className="mb-2 text-xs text-[var(--muted-foreground)]">
-            Tap a row only to open that month&apos;s bill for one person
-          </p>
           {rows.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--card)] p-8 text-center text-sm text-[var(--muted-foreground)]">
               No data for this month
@@ -207,12 +200,11 @@ export default function ReportsPage() {
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{contact.name}</p>
                       <p className="text-xs text-[var(--muted-foreground)]">
-                        {KIND_LABELS[contact.kind]} · {entryCount} entries ·{" "}
-                        {formatLitres(litres)}
+                        {entryCount} entries · {formatLitres(litres)}
                       </p>
                       {extraNet !== 0 && (
                         <p className="text-xs text-[var(--muted-foreground)]">
-                          Extras: {formatInr(extraNet)}
+                          Advances/extras: {formatInr(extraNet)}
                         </p>
                       )}
                     </div>
