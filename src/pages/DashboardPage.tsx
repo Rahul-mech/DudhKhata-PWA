@@ -15,12 +15,8 @@ import {
   todayIsoDate,
 } from "../lib/calc";
 import type { Contact, MilkEntry, ExtraTxn } from "../types";
-import { EXTRA_LABELS, KIND_LABELS } from "../types";
+import { EXTRA_LABELS } from "../types";
 
-/**
- * Home: today + outstanding + add + this-month milk breakdown (who contributed)
- * Does NOT open Monthly Settlement or Ledger.
- */
 export default function DashboardPage() {
   const { user } = useAuth();
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -58,7 +54,6 @@ export default function DashboardPage() {
   );
   const monthAmount = monthEntries.reduce((s, e) => s + entryTotals(e).amount, 0);
 
-  // Who made up this month's milk total (amounts only — not settlement page)
   const monthByContact = contacts
     .map((c) => {
       const mine = monthEntries.filter((e) => e.contactId === c.id);
@@ -69,17 +64,13 @@ export default function DashboardPage() {
     .filter((r) => r.count > 0)
     .sort((a, b) => b.amount - a.amount);
 
+  // Sign-based only: positive balance → collect, negative → pay
   let toCollect = 0;
   let toPay = 0;
   for (const c of contacts) {
     const bal = contactBalance(c, entries, extras);
-    if (c.kind === "customer") {
-      if (bal > 0) toCollect += bal;
-      else toPay += -bal;
-    } else {
-      if (bal > 0) toPay += bal;
-      else toCollect += -bal;
-    }
+    if (bal > 0) toCollect += bal;
+    else if (bal < 0) toPay += -bal;
   }
 
   const nameOf = (id: string) => contacts.find((c) => c.id === id)?.name ?? "Contact";
@@ -156,22 +147,25 @@ export default function DashboardPage() {
 
         <section>
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-            Outstanding
+            Net balances
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-              <p className="text-xs text-[var(--muted-foreground)]">To collect</p>
+              <p className="text-xs text-[var(--muted-foreground)]">Positive total</p>
               <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--collect)]">
                 {formatInr(toCollect)}
               </p>
             </div>
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4">
-              <p className="text-xs text-[var(--muted-foreground)]">To pay</p>
+              <p className="text-xs text-[var(--muted-foreground)]">Negative total</p>
               <p className="mt-1 text-xl font-semibold tabular-nums text-[var(--pay)]">
                 {formatInr(toPay)}
               </p>
             </div>
           </div>
+          <p className="mt-1 text-[11px] text-[var(--muted-foreground)]">
+            You decide who to collect from or pay — app only shows net per person
+          </p>
         </section>
 
         <Link
@@ -181,7 +175,6 @@ export default function DashboardPage() {
           + Add Milk Entry
         </Link>
 
-        {/* This month: expand = who contributed milk $ this month only */}
         <button
           type="button"
           onClick={() => setShowMonthBreak(!showMonthBreak)}
@@ -211,8 +204,7 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{contact.name}</p>
                     <p className="text-xs text-[var(--muted-foreground)]">
-                      {KIND_LABELS[contact.kind]} · {count} entries ·{" "}
-                      {formatLitres(litres)}
+                      {count} entries · {formatLitres(litres)}
                     </p>
                   </div>
                   <p className="tabular-nums text-sm font-semibold">{formatInr(amount)}</p>
@@ -229,9 +221,6 @@ export default function DashboardPage() {
           {activity.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--card)] p-8 text-center">
               <p className="text-sm text-[var(--muted-foreground)]">No entries yet</p>
-              <p className="mt-1 text-xs text-[var(--muted-foreground)]">
-                Use Contacts to add people, then + to enter milk
-              </p>
             </div>
           ) : (
             <div className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)]">
