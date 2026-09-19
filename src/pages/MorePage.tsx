@@ -1,10 +1,8 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { useAccess } from "../hooks/useAccess";
 
 export default function MorePage() {
   const { user } = useAuth();
-  const { isOwner } = useAccess();
 
   return (
     <div className="min-h-dvh bg-[var(--background)]">
@@ -37,18 +35,6 @@ export default function MorePage() {
             Base rate, apply rate to a month, sign out
           </p>
         </Link>
-
-        {isOwner && (
-          <Link
-            to="/admin"
-            className="block rounded-2xl border border-[var(--primary)] bg-[var(--card)] px-4 py-4 hover:bg-[var(--muted)]"
-          >
-            <p className="text-sm font-semibold text-[var(--primary)]">Access admin</p>
-            <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
-              Approve or block users who sign up
-            </p>
-          </Link>
-        )}
 
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-4">
           <p className="text-sm font-semibold">DudhKhata</p>

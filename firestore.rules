@@ -1,42 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner() {
-      // Firebase Console me apna email add karo OR client OWNER_EMAILS ke saath match
-      // Stronger: custom claims. For now email match:
-      return signedIn() && request.auth.token.email in [
-        // "your.email@gmail.com"
-      ];
-    }
-
-    function accessApproved() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/access/$(request.auth.uid))
-        && get(/databases/$(database)/documents/access/$(request.auth.uid)).data.status == 'approved';
-    }
-
-    // Access registry
-    match /access/{uid} {
-      // User can read own record; owners can read all (client filters)
-      allow read: if signedIn() && (request.auth.uid == uid || isOwner());
-      // First create: only self, status pending or approved if rules allow
-      allow create: if signedIn()
-        && request.auth.uid == uid
-        && request.resource.data.uid == uid
-        && request.resource.data.status in ['pending', 'approved'];
-      // Only owner can change status of others; user cannot self-approve
-      allow update: if signedIn() && isOwner();
-      allow delete: if isOwner();
-    }
-
-    // Private user data — only approved owner of that uid
+    // Simple: logged-in user can only read/write their own data
     match /users/{userId}/{document=**} {
-      allow read, write: if accessApproved() && request.auth.uid == userId;
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
