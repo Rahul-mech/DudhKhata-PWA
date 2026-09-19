@@ -12,12 +12,11 @@ import type { User } from "firebase/auth";
 import { db } from "./firebase";
 
 /**
- * IMPORTANT: Apna Google account email yahan lowercase me likho.
- * Ye emails auto-approved + Admin page dekh sakte hain.
- * Example: "rahul@gmail.com"
+ * Owner emails — auto-approved + Access admin page.
+ * Must be exact Google login email, lowercase.
  */
 export const OWNER_EMAILS: string[] = [
-  // "gurumaincastle1@gmail.com",
+  "gurumaincastle1@gmail.com",
 ];
 
 export type AccessStatus = "pending" | "approved" | "blocked";
@@ -43,8 +42,7 @@ export function isOwnerEmail(email: string | null | undefined): boolean {
 
 /**
  * Ensure access doc exists. Owners auto-approved.
- * If OWNER_EMAILS is empty, everyone is approved (open mode)
- * so existing deploy doesn't lock you out before you add your email.
+ * If OWNER_EMAILS is empty, everyone is approved (open mode).
  */
 export async function ensureAccessRecord(user: User): Promise<AccessRecord> {
   const ref = doc(db, "access", user.uid);
@@ -54,7 +52,6 @@ export async function ensureAccessRecord(user: User): Promise<AccessRecord> {
 
   if (snap.exists()) {
     const data = snap.data() as AccessRecord;
-    // Promote to approved if now in owner list
     if (isOwnerEmail(email) && data.status !== "approved") {
       const updated: AccessRecord = {
         ...data,
