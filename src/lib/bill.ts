@@ -1,6 +1,6 @@
 import type { Contact, ExtraTxn, MilkEntry } from "../types";
 import { EXTRA_LABELS, KIND_LABELS } from "../types";
-import { entryTotals, extraSigned, formatInr, formatLitres } from "./calc";
+import { entryTotals, extraSigned, formatInr, formatLitres, round2 } from "./calc";
 
 export function shareOnWhatsApp(text: string, phone?: string) {
   const digits = (phone || "").replace(/\D/g, "");
@@ -68,7 +68,6 @@ export function printHtml(title: string, bodyHtml: string) {
     const url = URL.createObjectURL(blob);
     const w = window.open(url, "_blank");
     if (!w) {
-      // Popup blocked — download HTML instead
       const a = document.createElement("a");
       a.href = url;
       a.download = `${safeTitle.replace(/\s+/g, "_") || "bill"}.html`;
@@ -77,12 +76,81 @@ export function printHtml(title: string, bodyHtml: string) {
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
       return;
     }
-    // Revoke after load so memory is freed later
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
   } catch (err) {
     console.error(err);
     alert("Could not open print page. Try again or use WhatsApp share.");
   }
+}
+
+/** One bill row per date: merge morning-only + evening-only saves on same day. */
+type DayRow = {
+  entryDate: string;
+  morningLitres: number;
+  morningFat: number;
+  eveningLitres: number;
+  eveningFat: number;
+  /** Sum of saved entry amounts (keeps rate accuracy) */
+  amount: number;
+  litres: number;
+};
+
+function weightedFat(parts: { litres: number; fat: number }[]): number {
+  let lit = 0;
+  let fatLit = 0;
+  for (const p of parts) {
+    if (p.litres > 0 && p.fat > 0) {
+      lit += p.litres;
+      fatLit += p.litres * p.fat;
+    }
+  }
+  if (lit <= 0) return 0;
+  return round2(fatLit / lit);
+}
+
+export function mergeEntriesByDate(entries: MilkEntry[]): DayRow[] {
+  const map = new Map<string, MilkEntry[]>();
+  for (const e of entries) {
+    const list = map.get(e.entryDate) || [];
+    list.push(e);
+    map.set(e.entryDate, list);
+  }
+
+  const rows: DayRow[] = [];
+  for (const [entryDate, list] of map) {
+    const morningParts: { litres: number; fat: number }[] = [];
+    const eveningParts: { litres: number; fat: number }[] = [];
+    let amount = 0;
+    let litres = 0;
+
+    for (const e of list) {
+      const t = entryTotals(e);
+      amount += t.amount;
+      litres += t.litres;
+      if (e.morningLitres > 0) {
+        morningParts.push({ litres: e.morningLitres, fat: e.morningFat || 0 });
+      }
+      if (e.eveningLitres > 0) {
+        eveningParts.push({ litres: e.eveningLitres, fat: e.eveningFat || 0 });
+      }
+    }
+
+    const morningLitres = round2(morningParts.reduce((s, p) => s + p.litres, 0));
+    const eveningLitres = round2(eveningParts.reduce((s, p) => s + p.litres, 0));
+
+    rows.push({
+      entryDate,
+      morningLitres,
+      morningFat: weightedFat(morningParts),
+      eveningLitres,
+      eveningFat: weightedFat(eveningParts),
+      amount: round2(amount),
+      litres: round2(litres),
+    });
+  }
+
+  rows.sort((a, b) => (a.entryDate < b.entryDate ? 1 : -1));
+  return rows;
 }
 
 export function buildContactBillText(opts: {
@@ -98,17 +166,23 @@ export function buildContactBillText(opts: {
   lines.push(`Month: ${month}`);
   lines.push(`----------------`);
 
+  const days = mergeEntriesByDate(entries);
   let milkTotal = 0;
   let litresTotal = 0;
-  for (const e of entries) {
-    const t = entryTotals(e);
-    milkTotal += t.amount;
-    litresTotal += t.litres;
-    lines.push(
-      `${e.entryDate}: M ${e.morningLitres || 0}L@${e.morningFat || 0} E ${e.eveningLitres || 0}L@${e.eveningFat || 0} = ${formatInr(t.amount)}`
-    );
+
+  if (days.length === 0) {
+    lines.push(`No milk entries`);
+  } else {
+    for (const d of days) {
+      milkTotal += d.amount;
+      litresTotal += d.litres;
+      const m =
+        d.morningLitres > 0 ? `M ${d.morningLitres}L@${d.morningFat}` : "M -";
+      const e =
+        d.eveningLitres > 0 ? `E ${d.eveningLitres}L@${d.eveningFat}` : "E -";
+      lines.push(`${d.entryDate}: ${m} ${e} = ${formatInr(d.amount)}`);
+    }
   }
-  if (entries.length === 0) lines.push(`No milk entries`);
 
   lines.push(`----------------`);
   lines.push(`Total milk: ${formatLitres(litresTotal)} = ${formatInr(milkTotal)}`);
@@ -137,20 +211,21 @@ export function buildContactBillHtml(opts: {
   extras: ExtraTxn[];
 }): string {
   const { contact, month, entries, extras } = opts;
+  const days = mergeEntriesByDate(entries);
   let milkTotal = 0;
   let litresTotal = 0;
-  const rows = entries
-    .map((e) => {
-      const t = entryTotals(e);
-      milkTotal += t.amount;
-      litresTotal += t.litres;
+
+  const rows = days
+    .map((d) => {
+      milkTotal += d.amount;
+      litresTotal += d.litres;
       return `<tr>
-        <td>${e.entryDate}</td>
-        <td class="num">${e.morningLitres || "-"}</td>
-        <td class="num">${e.morningFat || "-"}</td>
-        <td class="num">${e.eveningLitres || "-"}</td>
-        <td class="num">${e.eveningFat || "-"}</td>
-        <td class="num">${formatInr(t.amount)}</td>
+        <td>${d.entryDate}</td>
+        <td class="num">${d.morningLitres > 0 ? d.morningLitres : "-"}</td>
+        <td class="num">${d.morningLitres > 0 ? d.morningFat : "-"}</td>
+        <td class="num">${d.eveningLitres > 0 ? d.eveningLitres : "-"}</td>
+        <td class="num">${d.eveningLitres > 0 ? d.eveningFat : "-"}</td>
+        <td class="num">${formatInr(d.amount)}</td>
       </tr>`;
     })
     .join("");
@@ -203,7 +278,7 @@ export function buildContactBillHtml(opts: {
         : ""
     }
     <p class="total">Settlement: ${formatInr(settlement)}</p>
-    <p class="muted">Generated by DudhKhata</p>
+    <p class="muted">Generated by DudhKhata · Same-day M/E merged on bill</p>
   `;
 }
 
