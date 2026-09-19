@@ -1,21 +1,10 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-
-const links = [
-  {
-    to: "/reports",
-    title: "Monthly settlement",
-    desc: "One month totals · print PDF · WhatsApp summary",
-  },
-  {
-    to: "/settings",
-    title: "Settings",
-    desc: "Base rate, apply rate to a month, sign out",
-  },
-];
+import { useAccess } from "../hooks/useAccess";
 
 export default function MorePage() {
   const { user } = useAuth();
+  const { isOwner } = useAccess();
 
   return (
     <div className="min-h-dvh bg-[var(--background)]">
@@ -29,21 +18,37 @@ export default function MorePage() {
       </header>
 
       <main className="mx-auto max-w-lg space-y-3 px-4 py-4">
-        <p className="text-xs text-[var(--muted-foreground)] px-1">
-          Where to go: Home = today · Contacts = people · Ledger = every entry by date ·
-          here = month bill & settings
-        </p>
+        <Link
+          to="/reports"
+          className="block rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-4 hover:bg-[var(--muted)]"
+        >
+          <p className="text-sm font-semibold">Monthly settlement</p>
+          <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
+            Month totals · print PDF · WhatsApp summary
+          </p>
+        </Link>
 
-        {links.map((l) => (
+        <Link
+          to="/settings"
+          className="block rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-4 hover:bg-[var(--muted)]"
+        >
+          <p className="text-sm font-semibold">Settings</p>
+          <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
+            Base rate, apply rate to a month, sign out
+          </p>
+        </Link>
+
+        {isOwner && (
           <Link
-            key={l.to}
-            to={l.to}
-            className="block rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-4 hover:bg-[var(--muted)]"
+            to="/admin"
+            className="block rounded-2xl border border-[var(--primary)] bg-[var(--card)] px-4 py-4 hover:bg-[var(--muted)]"
           >
-            <p className="text-sm font-semibold">{l.title}</p>
-            <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">{l.desc}</p>
+            <p className="text-sm font-semibold text-[var(--primary)]">Access admin</p>
+            <p className="mt-0.5 text-xs text-[var(--muted-foreground)]">
+              Approve or block users who sign up
+            </p>
           </Link>
-        ))}
+        )}
 
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] px-4 py-4">
           <p className="text-sm font-semibold">DudhKhata</p>
