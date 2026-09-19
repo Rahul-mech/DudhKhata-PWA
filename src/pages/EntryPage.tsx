@@ -38,7 +38,6 @@ export default function EntryPage() {
     };
   }, [user]);
 
-  // Prefill when editing
   useEffect(() => {
     if (!editId || entries.length === 0 || loaded) return;
     const existing = entries.find((e) => e.id === editId);
@@ -85,23 +84,17 @@ export default function EntryPage() {
         baseRate,
         note,
       });
-      if (editId) {
-        navigate(`/contacts/${contactId}`);
-      } else {
-        navigate("/");
-      }
+      navigate(editId ? "/entries" : "/");
     } finally {
       setSaving(false);
     }
   };
 
-  const backTo = editId && contactId ? `/contacts/${contactId}` : "/";
-
   return (
     <div className="min-h-dvh bg-[var(--background)]">
       <header className="sticky top-0 z-10 border-b border-[var(--border)] bg-[var(--card)] px-4 py-3">
         <div className="mx-auto flex max-w-lg items-center gap-3">
-          <Link to={backTo} className="text-sm text-[var(--muted-foreground)]">
+          <Link to={editId ? "/entries" : "/"} className="text-sm text-[var(--muted-foreground)]">
             ← Back
           </Link>
           <h1 className="text-lg font-semibold">{editId ? "Edit Entry" : "Add Entry"}</h1>
@@ -126,7 +119,7 @@ export default function EntryPage() {
                   <option value="">Select contact</option>
                   {contacts.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} ({c.kind})
+                      {c.name}
                     </option>
                   ))}
                 </select>
