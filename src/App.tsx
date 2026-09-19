@@ -17,7 +17,7 @@ import AdminPage from "./pages/AdminPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
-  const { isApproved, loading: accessLoading, status } = useAccess();
+  const { isApproved, loading: accessLoading } = useAccess();
 
   if (authLoading || accessLoading) {
     return (
