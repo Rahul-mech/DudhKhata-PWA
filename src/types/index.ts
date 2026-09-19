@@ -1,3 +1,4 @@
+/** Kept for old Firestore docs; UI no longer uses customer/supplier. */
 export type ContactKind = "customer" | "supplier";
 
 export type ExtraType = "advance_given" | "advance_received" | "ghee" | "other";
@@ -39,21 +40,15 @@ export interface ExtraTxn {
 
 export interface UserSettings {
   baseRate: number;
-  /** Month key YYYY-MM → rate for that month (used for new entries + bulk apply) */
   monthlyRates?: Record<string, number>;
   updatedAt: string;
 }
 
 export const EXTRA_LABELS: Record<ExtraType, string> = {
-  advance_given: "Advance Given",
-  advance_received: "Advance Received",
-  ghee: "Ghee",
-  other: "Other",
-};
-
-export const KIND_LABELS: Record<ContactKind, string> = {
-  customer: "Customer",
-  supplier: "Supplier",
+  advance_given: "Advance / Payment (deduct)",
+  advance_received: "Advance / Payment (deduct)",
+  ghee: "Ghee (add)",
+  other: "Other (add)",
 };
 
 export function monthKeyFromDate(isoDate: string): string {

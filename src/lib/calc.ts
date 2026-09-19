@@ -22,18 +22,20 @@ export function entryTotals(
   return { morning, evening, litres, amount: round2(morning + evening) };
 }
 
-export function extraSigned(
-  kind: Contact["kind"],
-  extra: Pick<ExtraTxn, "type" | "amount">
-): number {
+/**
+ * Simple ledger math (no customer/supplier):
+ * - Milk entries: always +amount
+ * - Advance / payment: always −amount (deducted from milk total)
+ * - Ghee / other goods: +amount (added to total)
+ */
+export function extraSigned(extra: Pick<ExtraTxn, "type" | "amount">): number {
   switch (extra.type) {
+    case "advance_given":
+    case "advance_received":
+      return -Math.abs(extra.amount);
     case "ghee":
     case "other":
-      return extra.amount;
-    case "advance_received":
-      return kind === "customer" ? -extra.amount : extra.amount;
-    case "advance_given":
-      return kind === "customer" ? extra.amount : -extra.amount;
+      return Math.abs(extra.amount);
     default:
       return extra.amount;
   }
@@ -51,7 +53,7 @@ export function contactBalance(
   }
   for (const x of extras) {
     if (x.contactId !== contact.id) continue;
-    sum += extraSigned(contact.kind, x);
+    sum += extraSigned(x);
   }
   return round2(sum);
 }
